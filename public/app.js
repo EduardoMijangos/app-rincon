@@ -1,8 +1,13 @@
 // ====== CONFIGURA AQUÍ ======
 const CONFIG = {
   name: 'preciosa',
-  startDate: '2026-11-13T00:00:00', // ← la fecha en que empezaron
-  vapidKey: 'BGovB4Y_bkqmOhy8AjInl_8asWSae9y2_N7KM1REYXRDjlCldQ8WF5wdh8a9Hw9_sPEKYfKZMhvo4rA4uBinqwQ'
+  startDate: '2024-02-14T00:00:00',
+  vapidKey: 'BGovB4Y_bkqmOhy8AjInl_8asWSae9y2_N7KM1REYXRDjlCldQ8WF5wdh8a9Hw9_sPEKYfKZMhvo4rA4uBinqwQ',
+  dates: [ // fechas que se repiten cada año: mes-día
+    { label: 'Empezo la app jeje', md: '11-14', emoji: '💍' },
+    { label: 'Tu cumpleaños', md: '20', emoji: '🎂' },
+    { label: 'San Valentín', md: '02-14', emoji: '🌹' }
+  ]
 };
 const loveQuotes = [
   "Si tuviera que volver a elegir, te elegiría a ti mil veces más.",
@@ -14,12 +19,22 @@ const loveQuotes = [
   "Contigo cualquier plan simple se convierte en mi favorito."
 ];
 const letters = [
-  ["Estés triste", "Respira. Nada de lo que sientes hoy te quita lo valiente. Aquí estoy, aunque sea desde la pantalla."],
-  ["Me extrañes", "Yo también te extraño. Cierra los ojos un momento: ya casi toca abrazo."],
-  ["No puedas dormir", "Piensa en algo bonito que hayamos vivido. Yo ya estoy pensando en el mío. Buenas noches, vida."],
-  ["Dudes de ti", "Eres más capaz de lo que crees. Lo digo yo, que te veo de cerca."],
-  ["Estés feliz", "¡Qué bonito verte así! Guarda este momento, porque yo lo guardo contigo."]
+  ["estés triste", "Respira. Nada de lo que sientes hoy te quita lo valiente. Aquí estoy, aunque sea desde la pantalla."],
+  ["me extrañes", "Yo también te extraño. Cierra los ojos un momento: ya casi toca abrazo."],
+  ["no puedas dormir", "Piensa en algo bonito que hayamos vivido. Yo ya estoy pensando en el mío. Buenas noches, vida."],
+  ["dudes de ti", "Eres más capaz de lo que crees. Lo digo yo, que te veo de cerca."],
+  ["estés feliz", "¡Qué bonito verte así! Guarda este momento, porque yo lo guardo contigo."]
 ];
+const moods = {
+  '😊': "Me alegra saberlo. Que nada te quite esa sonrisa hoy 🌞",
+  '🥰': "Qué bonito. Esa energía tuya contagia a cualquiera, empezando por mí 💕",
+  '😐': "Un día regular también cuenta. Mira algo que te guste y date un respiro 🍵",
+  '😔': "Aquí estoy contigo. Si quieres, cuéntame en «Un mensaje para mí». No tienes que cargar sola con esto 🫂",
+  '😴': "Hoy toca ir con calma. Toma agua, descansa lo que puedas y sé amable contigo 🌙"
+};
+const waterMsgs = ["💧 Recordatorio: toma un poco de agua, mi amor.", "💧 Tu cuerpo te lo agradece: un vasito de agua."];
+const kindMsgs = [...loveQuotes, "Respira hondo y estírate un poquito 🌿", "Estoy orgulloso de ti, aunque hoy no lo hayas notado ✨", "Come algo rico hoy, te lo mereces 🍓"];
+
 const $ = id => document.getElementById(id);
 const rand = a => a[Math.floor(Math.random() * a.length)];
 const store = {
@@ -28,77 +43,145 @@ const store = {
 };
 function toast(msg) {
   const t = $('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 3000);
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 3200);
 }
 function burst(x, y, emoji = '💖', n = 8) {
   for (let i = 0; i < n; i++) {
     const s = document.createElement('span');
-    s.className = 'burst'; s.textContent = emoji;
-    s.style.left = x + 'px'; s.style.top = y + 'px';
+    s.className = 'burst'; s.textContent = emoji; s.style.left = x + 'px'; s.style.top = y + 'px';
     const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 70;
-    s.style.setProperty('--dx', Math.cos(a) * d + 'px');
-    s.style.setProperty('--dy', Math.sin(a) * d + 'px');
+    s.style.setProperty('--dx', Math.cos(a) * d + 'px'); s.style.setProperty('--dy', Math.sin(a) * d + 'px');
     document.body.appendChild(s); setTimeout(() => s.remove(), 900);
   }
 }
+async function api(body) {
+  const r = await fetch('/api/inbox', { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+  if (!r.ok) throw new Error(r.status);
+}
 
-// --- Saludo según la hora ---
-const h = new Date().getHours();
-$('greeting').textContent = (h < 6 ? 'Buenas madrugadas' : h < 12 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches')
-  + `, ${CONFIG.name} 🌸 Este rincón es para ti.`;
+// --- Saludo, contador y racha ---
+const hr = new Date().getHours();
+$('greeting').textContent = (hr < 6 ? 'Buenas madrugadas' : hr < 12 ? 'Buenos días' : hr < 20 ? 'Buenas tardes' : 'Buenas noches') + `, ${CONFIG.name} 🌸`;
+function tick() {
+  let s = Math.max(0, Math.floor((Date.now() - new Date(CONFIG.startDate)) / 1000));
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60); s %= 60;
+  $('counter').innerHTML = [[d, 'días'], [h, 'horas'], [m, 'min'], [s, 'seg']].map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
+}
+tick(); setInterval(tick, 1000);
+(function streak() {
+  const today = new Date().toDateString(), y = new Date(Date.now() - 864e5).toDateString();
+  let st = store.get('streak', { last: '', n: 0 });
+  if (st.last !== today) { st = { last: today, n: st.last === y ? st.n + 1 : 1 }; store.set('streak', st); }
+  $('streak').textContent = st.n > 1 ? `🔥 ${st.n} días seguidos visitando tu rincón` : '✨ Qué bueno que viniste hoy';
+})();
 
 // --- Corazones flotantes ---
 setInterval(() => {
   if (document.hidden) return;
   const e = document.createElement('span');
   e.className = 'float-heart'; e.textContent = rand(['❤️', '💕', '💗', '✨', '🌸']);
-  e.style.left = Math.random() * 100 + '%';
-  e.style.fontSize = 14 + Math.random() * 20 + 'px';
+  e.style.left = Math.random() * 100 + '%'; e.style.fontSize = 14 + Math.random() * 20 + 'px';
   e.style.animationDuration = 7 + Math.random() * 6 + 's';
   $('floating-hearts').appendChild(e); setTimeout(() => e.remove(), 14000);
 }, 1200);
-
-// --- Contador de tiempo juntos ---
-function tick() {
-  let s = Math.max(0, Math.floor((Date.now() - new Date(CONFIG.startDate)) / 1000));
-  const d = Math.floor(s / 86400), hh = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60); s %= 60;
-  $('counter').innerHTML = [[d, 'días'], [hh, 'horas'], [m, 'min'], [s, 'seg']]
-    .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
-}
-tick(); setInterval(tick, 1000);
 
 // --- Modal ---
 $('welcome-msg').textContent = `"${rand(loveQuotes)}"`;
 $('close-modal').addEventListener('click', e => { $('welcome-modal').style.display = 'none'; burst(e.clientX, e.clientY, '❤️', 12); });
 $('close-modal').focus();
 
-// --- Frases + favoritos ---
-let lastQuote = '', favs = store.get('favs', []);
-function renderFavs() { $('favs' in window ? 'favs' : 'favorites').innerHTML = favs.map(f => `<p>💗 ${f}</p>`).join(''); }
+// --- Mensaje del día y favoritos ---
+const dayIdx = Math.floor(Date.now() / 864e5);
+let current = loveQuotes[dayIdx % loveQuotes.length], favs = store.get('favs', []);
+$('daily').textContent = `"${current}"`;
+const renderFavs = () => $('favorites').innerHTML = favs.map(f => `<p>💗 ${f.replace(/</g, '&lt;')}</p>`).join('');
 $('new-quote-btn').addEventListener('click', e => {
-  let q; do { q = rand(loveQuotes); } while (q === lastQuote && loveQuotes.length > 1);
-  lastQuote = q; $('love-quote').textContent = `"${q}"`; burst(e.clientX, e.clientY);
+  let q; do { q = rand(loveQuotes); } while (q === current);
+  current = q; $('daily').textContent = `"${q}"`; burst(e.clientX, e.clientY);
 });
-$('copy-quote-btn').addEventListener('click', () => {
-  if (!lastQuote) return toast('Primero descubre un detalle 💌');
-  if (favs.includes(lastQuote)) return toast('Ya está en tus favoritos 💗');
-  favs.push(lastQuote); store.set('favs', favs); renderFavs(); toast('Guardado en tus favoritos 💗');
+$('fav-btn').addEventListener('click', () => {
+  if (favs.includes(current)) return toast('Ya está en tus favoritos 💗');
+  favs.push(current); store.set('favs', favs); renderFavs(); toast('Guardado en tus favoritos 💗');
 });
 renderFavs();
 
+// --- Estado de ánimo (me llega al buzón) ---
+Object.keys(moods).forEach(m => {
+  const b = document.createElement('button'); b.textContent = m; b.setAttribute('aria-label', 'Me siento ' + m); b.setAttribute('aria-pressed', 'false');
+  b.addEventListener('click', e => {
+    document.querySelectorAll('#moods button').forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true');
+    const r = $('mood-reply'); r.textContent = moods[m]; r.classList.remove('hidden'); burst(e.clientX, e.clientY, m, 6);
+    api({ type: 'mood', mood: m }).catch(() => {});
+  });
+  $('moods').appendChild(b);
+});
+
+// --- Fechas importantes ---
+$('dates').innerHTML = CONFIG.dates.map(d => {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  let t = new Date(`${now.getFullYear()}-${d.md}T00:00:00`); if (t < now) t.setFullYear(t.getFullYear() + 1);
+  const n = Math.round((t - now) / 864e5);
+  return `<div class="date-item"><span>${d.emoji} ${d.label}</span><b>${n === 0 ? '¡Hoy! 🎉' : n === 1 ? 'Mañana' : n + ' días'}</b></div>`;
+}).join('');
+
 // --- Ábrelo cuando… ---
 letters.forEach(([label, text]) => {
-  const b = document.createElement('button');
-  b.textContent = label; b.setAttribute('aria-pressed', 'false');
+  const b = document.createElement('button'); b.textContent = 'Ábrelo cuando ' + label; b.setAttribute('aria-pressed', 'false');
   b.addEventListener('click', e => {
-    document.querySelectorAll('.letters button').forEach(x => x.setAttribute('aria-pressed', 'false'));
-    b.setAttribute('aria-pressed', 'true');
-    const box = $('letter-text'); box.textContent = text; box.classList.remove('hidden');
-    burst(e.clientX, e.clientY, '💌', 6);
+    document.querySelectorAll('#letters button').forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true');
+    const box = $('letter-text'); box.textContent = text; box.classList.remove('hidden'); burst(e.clientX, e.clientY, '💌', 6);
   });
   $('letters').appendChild(b);
 });
-document.querySelectorAll('#letters button').forEach(b => b.textContent = 'Ábrelo cuando ' + b.textContent.toLowerCase());
+
+// --- Fotos: se reducen en el teléfono y se envían al buzón ---
+let photoData = '';
+$('photo-input').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const bmp = await createImageBitmap(f), k = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    photoData = c.toDataURL('image/jpeg', 0.72);
+    $('photo-preview').src = photoData;
+    ['photo-preview', 'photo-caption', 'photo-send'].forEach(i => $(i).classList.remove('hidden'));
+  } catch { toast('No pude leer esa foto. Prueba con otra 💔'); }
+});
+$('photo-send').addEventListener('click', async e => {
+  const btn = e.target; btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    await api({ type: 'photo', image: photoData, caption: $('photo-caption').value });
+    const img = document.createElement('img'); img.src = photoData; img.alt = 'Foto enviada'; $('my-photos').prepend(img);
+    ['photo-preview', 'photo-caption', 'photo-send'].forEach(i => $(i).classList.add('hidden'));
+    $('photo-caption').value = ''; $('photo-input').value = ''; photoData = '';
+    toast('¡Foto enviada! Me encantó 💕'); burst(e.clientX, e.clientY, '📸', 8);
+  } catch { toast('No se pudo enviar la foto. Inténtalo otra vez 💔'); }
+  btn.disabled = false; btn.textContent = 'Enviar foto 💌';
+});
+
+// --- Mensaje para mí ---
+$('msg-send').addEventListener('click', async e => {
+  const t = $('msg-text').value.trim(); if (!t) return toast('Escribe algo primero ✍️');
+  try { await api({ type: 'message', text: t }); $('msg-text').value = ''; toast('Mensaje enviado 💌'); burst(e.clientX, e.clientY, '💌', 8); }
+  catch { toast('No se pudo enviar. Inténtalo otra vez 💔'); }
+});
+
+// --- Recordatorios bonitos (mientras la app está abierta) ---
+let remindTimer, rs = store.get('remind', { every: 0, water: false });
+$('remind-every').value = rs.every; $('remind-water').checked = rs.water;
+async function remind() {
+  const m = rs.water && Math.random() < 0.4 ? rand(waterMsgs) : rand(kindMsgs);
+  toast(m);
+  if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+    const reg = await navigator.serviceWorker.ready; reg.showNotification('Para ti 💌', { body: m, icon: '/icon.svg', tag: 'mensajito' });
+  }
+}
+function setRemind() {
+  rs = { every: +$('remind-every').value, water: $('remind-water').checked }; store.set('remind', rs);
+  clearInterval(remindTimer); if (rs.every) remindTimer = setInterval(remind, rs.every * 60000);
+}
+$('remind-every').addEventListener('change', () => { setRemind(); toast(rs.every ? 'Recordatorios activados 💕' : 'Recordatorios apagados'); });
+$('remind-water').addEventListener('change', setRemind); setRemind();
 
 // --- Minijuego ---
 let score = 0, timeLeft = 20, spawner, clock, best = store.get('best', 0);
@@ -117,28 +200,44 @@ $('start-game-btn').addEventListener('click', () => {
   clock = setInterval(() => { $('time').textContent = --timeLeft; if (timeLeft <= 0) endGame(); }, 1000);
 });
 function spawnHeart() {
-  const area = $('game-area'), el = document.createElement('div');
-  el.className = 'target-heart';
-  const gold = Math.random() < 0.12; // corazón dorado = 3 puntos
-  el.textContent = gold ? '💛' : rand(['❤️', '💖', '💕', '💘', '✨']);
-  el.style.left = Math.random() * (area.clientWidth - 40) + 'px';
-  el.style.top = Math.random() * (area.clientHeight - 40) + 'px';
-  el.addEventListener('pointerdown', e => {
-    score += gold ? 3 : 1; $('score').textContent = score;
-    burst(e.clientX, e.clientY, el.textContent, 4); el.remove();
-  });
+  const area = $('game-area'), el = document.createElement('div'), gold = Math.random() < 0.12;
+  el.className = 'target-heart'; el.textContent = gold ? '💛' : rand(['❤️', '💖', '💕', '💘', '✨']);
+  el.style.left = Math.random() * (area.clientWidth - 40) + 'px'; el.style.top = Math.random() * (area.clientHeight - 40) + 'px';
+  el.addEventListener('pointerdown', e => { score += gold ? 3 : 1; $('score').textContent = score; burst(e.clientX, e.clientY, el.textContent, 4); el.remove(); });
   area.appendChild(el); setTimeout(() => el.remove(), 1300);
 }
 
-// --- Notas ---
-const notes = $('secret-notes'); notes.value = store.get('notes', '');
-let saveT;
+// --- Notas locales ---
+const notes = $('secret-notes'); notes.value = store.get('notes', ''); let saveT;
 notes.addEventListener('input', () => {
   $('save-status').textContent = 'Guardando…'; clearTimeout(saveT);
   saveT = setTimeout(() => { store.set('notes', notes.value); $('save-status').textContent = 'Guardado en tu dispositivo ✨'; }, 500);
 });
 
-// --- Service Worker y notificaciones ---
+// --- Buzón (solo si abres la página con ?admin=TU_CLAVE) ---
+const ADMIN = new URLSearchParams(location.search).get('admin');
+if (ADMIN) {
+  $('admin').classList.remove('hidden'); $('welcome-modal').style.display = 'none';
+  const load = async () => {
+    try {
+      const r = await fetch('/api/inbox?key=' + encodeURIComponent(ADMIN)); if (!r.ok) throw 0;
+      const items = await r.json(), box = $('inbox'); box.innerHTML = '';
+      if (!items.length) box.textContent = 'Aún no hay nada en el buzón.';
+      items.forEach(it => {
+        const a = document.createElement('article'), s = document.createElement('small');
+        s.textContent = new Date(it.at).toLocaleString('es-MX') + ' · ' + { photo: '📸 Foto', message: '✉️ Mensaje', mood: '🌈 Ánimo' }[it.type];
+        a.append(s);
+        const txt = it.type === 'mood' ? it.mood : it.type === 'photo' ? it.caption : it.text;
+        if (txt) { const p = document.createElement('p'); p.textContent = txt; a.append(p); }
+        if (it.image) { const i = document.createElement('img'); i.src = it.image; i.alt = it.caption || 'Foto'; a.append(i); }
+        box.append(a);
+      });
+    } catch { toast('Clave incorrecta o sin conexión'); }
+  };
+  $('admin-refresh').addEventListener('click', load); load();
+}
+
+// --- Service Worker y notificaciones push ---
 const notifBtn = $('enable-notif');
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(console.error);
 if (!('PushManager' in window) || !('Notification' in window)) {
@@ -150,13 +249,11 @@ if (!('PushManager' in window) || !('Notification' in window)) {
     try {
       if (await Notification.requestPermission() !== 'granted') return toast('Permite las notificaciones para recibir mensajitos lindos ❤️');
       const reg = await navigator.serviceWorker.ready;
-      const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({
-        userVisibleOnly: true, applicationServerKey: urlB64(CONFIG.vapidKey)
-      });
+      const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(CONFIG.vapidKey) });
       const r = await fetch('/api/subscribe', { method: 'POST', body: JSON.stringify(sub), headers: { 'Content-Type': 'application/json' } });
-      if (!r.ok) throw new Error('subscribe ' + r.status);
+      if (!r.ok) throw new Error(r.status);
       notifBtn.textContent = '✅ Mensajitos activados'; notifBtn.disabled = true;
-      reg.showNotification('¡Hola preciosa! ❤️', { body: 'A partir de ahora te recordaré lo mucho que me importas.', icon: 'icon.svg' });
+      reg.showNotification('¡Hola preciosa! ❤️', { body: 'A partir de ahora te recordaré lo mucho que me importas.', icon: '/icon.svg' });
     } catch (err) { console.error(err); toast('No se pudo activar. Inténtalo de nuevo 💔'); }
   });
 }

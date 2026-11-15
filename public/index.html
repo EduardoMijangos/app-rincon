@@ -24,29 +24,67 @@
 
 <header>
   <h1>Para la chica más especial ✨</h1>
-  <p class="subtitle" id="greeting">Un lugar para que te distraigas, leas cosas lindas y me tengas cerca.</p>
-  <div class="counter" aria-live="off">
-    <p>Llevamos juntos</p>
-    <div class="counter-grid" id="counter"></div>
-  </div>
+  <p class="subtitle" id="greeting"></p>
+  <div class="counter"><p>Llevamos juntos</p><div class="counter-grid" id="counter"></div></div>
+  <p class="streak" id="streak"></p>
   <button id="enable-notif" class="btn-notif">🔔 Activar mensajitos</button>
 </header>
 
 <main class="container">
   <section class="card">
-    <h2>💌 Un detalle para este momento</h2>
-    <p id="love-quote" class="quote-box" aria-live="polite">Toca el botón para descubrir lo que pienso de ti…</p>
+    <h2>🌅 Tu mensaje de hoy</h2>
+    <p id="daily" class="quote-box"></p>
     <div class="row">
       <button id="new-quote-btn" class="btn-romantic">Dame otro detalle</button>
-      <button id="copy-quote-btn" class="btn-ghost" title="Guardar en favoritos">🤍 Guardar</button>
+      <button id="fav-btn" class="btn-ghost">🤍 Guardar</button>
     </div>
     <div id="favorites" class="favs"></div>
   </section>
 
   <section class="card">
+    <h2>🌈 ¿Cómo te sientes hoy?</h2>
+    <div class="row moods" id="moods"></div>
+    <p id="mood-reply" class="quote-box hidden" aria-live="polite"></p>
+  </section>
+
+  <section class="card">
+    <h2>📅 Fechas que importan</h2>
+    <div id="dates" class="dates"></div>
+  </section>
+
+  <section class="card">
     <h2>💗 Ábrelo cuando…</h2>
     <div id="letters" class="letters"></div>
-    <div id="letter-text" class="quote-box hidden" aria-live="polite"></div>
+    <p id="letter-text" class="quote-box hidden" aria-live="polite"></p>
+  </section>
+
+  <section class="card">
+    <h2>📸 Nuestras fotos</h2>
+    <p>Comparte un momento bonito conmigo. Me llega al instante.</p>
+    <label class="btn-ghost file-btn">Elegir foto<input id="photo-input" type="file" accept="image/*" hidden></label>
+    <img id="photo-preview" class="preview hidden" alt="Vista previa de la foto elegida">
+    <input id="photo-caption" class="field hidden" maxlength="120" placeholder="Escribe algo sobre esta foto (opcional)">
+    <button id="photo-send" class="btn-romantic hidden">Enviar foto 💌</button>
+    <div id="my-photos" class="gallery"></div>
+  </section>
+
+  <section class="card">
+    <h2>✉️ Un mensaje para mí</h2>
+    <p>Lo que quieras contarme, cuando quieras.</p>
+    <textarea id="msg-text" maxlength="500" placeholder="Hoy pensé en…"></textarea>
+    <button id="msg-send" class="btn-romantic">Enviar mensaje</button>
+  </section>
+
+  <section class="card">
+    <h2>⏰ Recordatorios bonitos</h2>
+    <p>Mientras tengas el rincón abierto, te recordaré cosas lindas.</p>
+    <select id="remind-every" class="field" aria-label="Frecuencia de recordatorios">
+      <option value="0">Apagados</option>
+      <option value="30">Cada 30 minutos</option>
+      <option value="60">Cada hora</option>
+      <option value="120">Cada 2 horas</option>
+    </select>
+    <label class="check"><input type="checkbox" id="remind-water"> Incluir recordatorio de tomar agua 💧</label>
   </section>
 
   <section class="card">
@@ -58,9 +96,15 @@
 
   <section class="card">
     <h2>📝 Tus notas y pensamientos</h2>
-    <p>Escribe lo que quieras. Se queda guardado solo en tu teléfono.</p>
+    <p>Se quedan guardadas solo en tu teléfono.</p>
     <textarea id="secret-notes" placeholder="Tus ideas, sueños o lo que quieras contarme…"></textarea>
     <span id="save-status" class="status-text">Guardado automáticamente ✨</span>
+  </section>
+
+  <section class="card hidden" id="admin">
+    <h2>📬 Buzón (solo para ti)</h2>
+    <button id="admin-refresh" class="btn-ghost">Actualizar</button>
+    <div id="inbox" class="inbox"></div>
   </section>
 </main>
 
