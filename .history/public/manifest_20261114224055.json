@@ -1,0 +1,9 @@
+{
+  "name": "Un rincón para ti",
+  "short_name": "Para ti ❤️",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fccb90",
+  "theme_color": "#ff5d8f",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

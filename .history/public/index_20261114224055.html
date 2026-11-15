@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Un rincón para ti ✨</title>
+<meta name="theme-color" content="#ff5d8f">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="floating-hearts" aria-hidden="true"></div>
+
+<div id="welcome-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hello">
+  <div class="modal-content">
+    <h2 id="hello">Hola, preciosa ❤️</h2>
+    <p id="welcome-msg"></p>
+    <button id="close-modal" class="btn-romantic">Entrar a mi rincón</button>
+  </div>
+</div>
+
+<header>
+  <h1>Para la chica más especial ✨</h1>
+  <p class="subtitle" id="greeting">Un lugar para que te distraigas, leas cosas lindas y me tengas cerca.</p>
+  <div class="counter" aria-live="off">
+    <p>Llevamos juntos</p>
+    <div class="counter-grid" id="counter"></div>
+  </div>
+  <button id="enable-notif" class="btn-notif">🔔 Activar mensajitos</button>
+</header>
+
+<main class="container">
+  <section class="card">
+    <h2>💌 Un detalle para este momento</h2>
+    <p id="love-quote" class="quote-box" aria-live="polite">Toca el botón para descubrir lo que pienso de ti…</p>
+    <div class="row">
+      <button id="new-quote-btn" class="btn-romantic">Dame otro detalle</button>
+      <button id="copy-quote-btn" class="btn-ghost" title="Guardar en favoritos">🤍 Guardar</button>
+    </div>
+    <div id="favorites" class="favs"></div>
+  </section>
+
+  <section class="card">
+    <h2>💗 Ábrelo cuando…</h2>
+    <div id="letters" class="letters"></div>
+    <div id="letter-text" class="quote-box hidden" aria-live="polite"></div>
+  </section>
+
+  <section class="card">
+    <h2>🎮 Atrapa el amor</h2>
+    <p>Puntos: <strong id="score">0</strong> · Tiempo: <strong id="time">20</strong>s · Récord: <strong id="best">0</strong></p>
+    <div id="game-area"></div>
+    <button id="start-game-btn" class="btn-romantic">Iniciar juego</button>
+  </section>
+
+  <section class="card">
+    <h2>📝 Tus notas y pensamientos</h2>
+    <p>Escribe lo que quieras. Se queda guardado solo en tu teléfono.</p>
+    <textarea id="secret-notes" placeholder="Tus ideas, sueños o lo que quieras contarme…"></textarea>
+    <span id="save-status" class="status-text">Guardado automáticamente ✨</span>
+  </section>
+</main>
+
+<footer><p>Hecho con mucho cariño pensando en ti ❤️</p></footer>
+<div id="toast" class="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
