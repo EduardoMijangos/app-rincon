@@ -1,11 +1,11 @@
 // ====== CONFIGURA AQUÍ ======
 const CONFIG = {
   name: 'preciosa',
-  startDate: '2024-02-14T00:00:00',
+  startDate: '2024-11-13T00:00:00',
   vapidKey: 'BGovB4Y_bkqmOhy8AjInl_8asWSae9y2_N7KM1REYXRDjlCldQ8WF5wdh8a9Hw9_sPEKYfKZMhvo4rA4uBinqwQ',
   dates: [ // fechas que se repiten cada año: mes-día
     { label: 'Empezo la app jeje', md: '11-14', emoji: '💍' },
-    { label: 'Tu cumpleaños', md: '20', emoji: '🎂' },
+    { label: 'Tu cumpleaños', md: '03-20', emoji: '🎂' },
     { label: 'San Valentín', md: '02-14', emoji: '🌹' }
   ]
 };
