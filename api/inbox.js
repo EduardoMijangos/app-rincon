@@ -22,10 +22,19 @@ export default async function handler(req, res) {
       return res.status(201).json({ id });
     }
     if (req.method === 'GET') {
-      if (!process.env.ADMIN_KEY || req.query.key !== process.env.ADMIN_KEY) return res.status(401).end();
+      const key = req.headers['x-admin-key'] || req.query.key;
+      if (!process.env.ADMIN_KEY || key !== process.env.ADMIN_KEY) return res.status(401).end();
+      if (req.query.img) { // devuelve una sola foto como imagen
+        const it = await redis.get(`inbox:${req.query.img}`);
+        if (!it || !it.image) return res.status(404).end();
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+        return res.status(200).send(Buffer.from(it.image.split(',')[1], 'base64'));
+      }
       const ids = await redis.lrange('inbox', 0, 49);
-      const items = ids.length ? await redis.mget(...ids.map(i => `inbox:${i}`)) : [];
-      return res.status(200).json(items.filter(Boolean));
+      let items = ids.length ? (await redis.mget(...ids.map(i => `inbox:${i}`))).filter(Boolean) : [];
+      if (req.query.lite) items = items.map(({ image, ...r }) => ({ ...r, hasImage: !!image })); // sin fotos: respuesta ligera
+      return res.status(200).json(items);
     }
     res.status(405).end();
   } catch (e) {
