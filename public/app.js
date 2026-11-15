@@ -1,7 +1,7 @@
 // ====== CONFIGURA AQUÍ ======
 const CONFIG = {
   name: 'preciosa',
-  startDate: '2024-02-14T00:00:00', // ← la fecha en que empezaron
+  startDate: '2026-11-13T00:00:00', // ← la fecha en que empezaron
   vapidKey: 'BGovB4Y_bkqmOhy8AjInl_8asWSae9y2_N7KM1REYXRDjlCldQ8WF5wdh8a9Hw9_sPEKYfKZMhvo4rA4uBinqwQ'
 };
 const loveQuotes = [
