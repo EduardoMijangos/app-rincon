@@ -89,3 +89,25 @@ body[data-theme=night] .toast{background:#3a2f55}
 body[data-theme=night] .btn-romantic{background:#d6336c;color:#fff}
 body[data-theme=night] :is(.feed small,.note small,.status-text,.feed blockquote){color:#b9a8d6}
 body[data-theme=night] .note button{background:#2b2140}
+
+/* --- Animaciones y memoria --- */
+body{background-size:200% 200%;animation:bg 22s ease infinite}
+body[data-theme=night]{background-size:200% 200%}
+@keyframes bg{50%{background-position:100% 50%}}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+.reveal.in:hover{transform:translateY(-3px)}
+.btn-romantic,.btn-ghost,.btn-notif{transition:transform .15s,box-shadow .15s}
+.btn-romantic:hover,.btn-notif:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(230,62,120,.45)}
+.beat{display:inline-block;animation:beat 1.4s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.25)}30%{transform:scale(1)}45%{transform:scale(1.2)}}
+.tic{animation:tic .5s ease}
+@keyframes tic{40%{transform:scale(1.1);background:rgba(255,255,255,.45)}}
+.mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.mem-card{aspect-ratio:1;border-radius:14px;font-size:1.8rem;background:linear-gradient(135deg,var(--pink-soft),#cdb4db);color:#fff;border:none;padding:0}
+.mem-card.open{background:#fff;animation:flip .35s ease}
+.mem-card.done{background:#d8f5e3;animation:win .5s ease}
+@keyframes flip{0%{transform:scaleX(1)}50%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+@keyframes win{40%{transform:scale(1.15)}}
+body[data-theme=night] .mem-card.open{background:#3a2f55}
+body[data-theme=night] .mem-card.done{background:#2f5a47}

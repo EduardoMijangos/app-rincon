@@ -66,6 +66,7 @@ function tick() {
   let s = Math.max(0, Math.floor((Date.now() - new Date(CONFIG.startDate)) / 1000));
   const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60); s %= 60;
   $('counter').innerHTML = [[d, 'días'], [h, 'horas'], [m, 'min'], [s, 'seg']].map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
+  $('counter').lastElementChild.classList.add('tic');
 }
 tick(); setInterval(tick, 1000);
 (function streak() {
@@ -97,7 +98,7 @@ $('daily').textContent = `"${current}"`;
 const renderFavs = () => $('favorites').innerHTML = favs.map(f => `<p>💗 ${f.replace(/</g, '&lt;')}</p>`).join('');
 $('new-quote-btn').addEventListener('click', e => {
   let q; do { q = rand(loveQuotes); } while (q === current);
-  current = q; $('daily').textContent = `"${q}"`; burst(e.clientX, e.clientY);
+  current = q; typeText($('daily'), `"${q}"`); burst(e.clientX, e.clientY);
 });
 $('fav-btn').addEventListener('click', () => {
   if (favs.includes(current)) return toast('Ya está en tus favoritos 💗');
@@ -110,7 +111,7 @@ Object.keys(moods).forEach(m => {
   const b = document.createElement('button'); b.textContent = m; b.setAttribute('aria-label', 'Me siento ' + m); b.setAttribute('aria-pressed', 'false');
   b.addEventListener('click', e => {
     document.querySelectorAll('#moods button').forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true');
-    const r = $('mood-reply'); r.textContent = moods[m]; r.classList.remove('hidden'); burst(e.clientX, e.clientY, m, 6);
+    const r = $('mood-reply'); r.classList.remove('hidden'); typeText(r, moods[m]); burst(e.clientX, e.clientY, m, 6);
     api({ type: 'mood', mood: m }).catch(() => {});
   });
   $('moods').appendChild(b);
@@ -129,7 +130,7 @@ letters.forEach(([label, text]) => {
   const b = document.createElement('button'); b.textContent = 'Ábrelo cuando ' + label; b.setAttribute('aria-pressed', 'false');
   b.addEventListener('click', e => {
     document.querySelectorAll('#letters button').forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true');
-    const box = $('letter-text'); box.textContent = text; box.classList.remove('hidden'); burst(e.clientX, e.clientY, '💌', 6);
+    const box = $('letter-text'); box.classList.remove('hidden'); typeText(box, text); burst(e.clientX, e.clientY, '💌', 6);
   });
   $('letters').appendChild(b);
 });
@@ -203,7 +204,7 @@ function spawnHeart() {
   const area = $('game-area'), el = document.createElement('div'), gold = Math.random() < 0.12;
   el.className = 'target-heart'; el.textContent = gold ? '💛' : rand(['❤️', '💖', '💕', '💘', '✨']);
   el.style.left = Math.random() * (area.clientWidth - 40) + 'px'; el.style.top = Math.random() * (area.clientHeight - 40) + 'px';
-  el.addEventListener('pointerdown', e => { score += gold ? 3 : 1; $('score').textContent = score; burst(e.clientX, e.clientY, el.textContent, 4); el.remove(); });
+  el.addEventListener('pointerdown', e => { score += gold ? 3 : 1; $('score').textContent = score; burst(e.clientX, e.clientY, el.textContent, 4); buzz(10); el.remove(); });
   area.appendChild(el); setTimeout(() => el.remove(), 1300);
 }
 
@@ -349,9 +350,63 @@ function renderBadges() {
   const st = store.get('streak', { n: 1 });
   const list = [['🌱', 'Llegaste al rincón', true], ['🔥', '7 días de racha', st.n >= 7], ['📸', 'Primera foto enviada', store.get('sentPhoto', 0) > 0],
     ['💭', 'Respondiste una pregunta', store.get('qCount', 0) > 0], ['🎮', 'Récord de 15 puntos', best >= 15], ['📝', '5 notas guardadas', noteList.length >= 5],
-    ['⏳', 'Creaste una cápsula', capsules.length > 0]];
+    ['⏳', 'Creaste una cápsula', capsules.length > 0], ['🃏', 'Ganaste la memoria', store.get('memWins', 0) > 0]];
   $('badges').innerHTML = list.map(([e, l, ok]) => `<span class="${ok ? '' : 'off'}" title="${ok ? 'Logro desbloqueado' : 'Aún bloqueado'}">${e} ${l}</span>`).join('');
 }
+
+// --- Animaciones e interacción ---
+const calm = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+function buzz(ms = 15) { try { navigator.vibrate && navigator.vibrate(ms); } catch {} }
+function typeText(el, text) { // efecto máquina de escribir
+  clearInterval(el._t); if (calm) { el.textContent = text; return; }
+  let i = 0; el.textContent = '';
+  el._t = setInterval(() => { el.textContent = text.slice(0, ++i); if (i >= text.length) clearInterval(el._t); }, 28);
+}
+if (!calm) { // las tarjetas aparecen suavemente al hacer scroll
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.1 });
+  document.querySelectorAll('.card').forEach(c => { c.classList.add('reveal'); io.observe(c); });
+}
+let lastTrail = 0;
+document.addEventListener('pointermove', e => { // estela de brillos con el mouse
+  if (calm || e.pointerType !== 'mouse' || Date.now() - lastTrail < 90) return; lastTrail = Date.now(); burst(e.clientX, e.clientY, '✨', 1);
+});
+document.addEventListener('pointerdown', e => { // al tocar un espacio vacío salen corazoncitos
+  if (!calm && !e.target.closest('button,input,textarea,select,label,a,#game-area,.mem-grid')) burst(e.clientX, e.clientY, rand(['💗', '💕', '✨']), 5);
+});
+
+// --- Juego 2: Memoria de corazones ---
+const memEmojis = ['❤️', '🌹', '🍓', '🧸', '🎀', '🌙', '☀️', '🐱'];
+let memFirst = null, memLock = false, memMoves = 0, memPairs = 0, memBest = store.get('memBest', 0);
+$('mem-best').textContent = memBest || '–';
+function memNew() {
+  const g = $('mem-grid'); g.innerHTML = ''; memFirst = null; memLock = false; memMoves = 0; memPairs = 0; $('mem-moves').textContent = 0;
+  [...memEmojis, ...memEmojis].sort(() => Math.random() - 0.5).forEach(em => {
+    const b = mk('button', 'mem-card', '❔'); b.setAttribute('aria-label', 'Carta boca abajo'); b.dataset.e = em;
+    b.addEventListener('click', () => memFlip(b)); g.append(b);
+  });
+}
+function memFlip(b) {
+  if (memLock || b.classList.contains('open') || b.classList.contains('done')) return;
+  b.classList.add('open'); b.textContent = b.dataset.e; buzz();
+  if (!memFirst) { memFirst = b; return; }
+  const a = memFirst; memFirst = null; memMoves++; $('mem-moves').textContent = memMoves;
+  if (a.dataset.e === b.dataset.e) {
+    [a, b].forEach(x => { x.classList.remove('open'); x.classList.add('done'); });
+    const r = b.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, b.dataset.e, 5); buzz(30);
+    if (++memPairs === memEmojis.length) memWin();
+  } else {
+    memLock = true;
+    setTimeout(() => { [a, b].forEach(x => { x.classList.remove('open'); x.textContent = '❔'; }); memLock = false; }, 800);
+  }
+}
+function memWin() {
+  const record = !memBest || memMoves < memBest;
+  if (record) { memBest = memMoves; store.set('memBest', memBest); $('mem-best').textContent = memBest; }
+  store.set('memWins', store.get('memWins', 0) + 1); renderStats();
+  toast(record ? `¡Nuevo récord! Lo lograste en ${memMoves} movimientos 🎉` : `¡Ganaste en ${memMoves} movimientos! 💖`);
+  for (let i = 0; i < 6; i++) setTimeout(() => burst(Math.random() * innerWidth, innerHeight * (0.2 + Math.random() * 0.5), rand(['🎉', '💖', '✨']), 8), i * 200);
+}
+$('mem-new').addEventListener('click', memNew); memNew();
 
 // --- Service Worker y notificaciones push ---
 const notifBtn = $('enable-notif');
