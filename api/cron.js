@@ -17,7 +17,8 @@ const messages = [
 ];
 
 export default async function handler(req, res) {
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).end();
+  const ok = req.headers.authorization === `Bearer ${process.env.CRON_SECRET}` || req.query.secret === process.env.CRON_SECRET;
+  if (!process.env.CRON_SECRET || !ok) return res.status(401).end();
   try {
     const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Mexico_City' }).format(new Date())) % 24;
     if (hour >= 23 || hour < 8) return res.status(200).json({ status: 'Hora de descanso 😴' });

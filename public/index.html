@@ -31,6 +31,13 @@
 </header>
 
 <main class="container">
+  <section class="card" id="dashboard">
+    <h2>📊 Mi dashboard <span id="new-badge" class="badge hidden"></span></h2>
+    <div class="stats" id="stats"></div>
+    <h3>💌 Lo que te he mandado</h3>
+    <div id="from-him" class="feed" aria-live="polite"></div>
+  </section>
+
   <section class="card">
     <h2>🌅 Tu mensaje de hoy</h2>
     <p id="daily" class="quote-box"></p>
@@ -96,9 +103,10 @@
 
   <section class="card">
     <h2>📝 Tus notas y pensamientos</h2>
-    <p>Se quedan guardadas solo en tu teléfono.</p>
-    <textarea id="secret-notes" placeholder="Tus ideas, sueños o lo que quieras contarme…"></textarea>
-    <span id="save-status" class="status-text">Guardado automáticamente ✨</span>
+    <p>Se quedan guardadas solo en tu teléfono, a menos que tú decidas compartirme una.</p>
+    <textarea id="note-input" maxlength="1000" placeholder="Tus ideas, sueños o lo que quieras contarme…"></textarea>
+    <button id="note-add" class="btn-romantic">Guardar nota</button>
+    <div id="notes-list" class="notes"></div>
   </section>
 
   <section class="card hidden" id="admin">

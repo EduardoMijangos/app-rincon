@@ -4,7 +4,7 @@ const CONFIG = {
   startDate: '2026-11-13T00:00:00',
   vapidKey: 'BGovB4Y_bkqmOhy8AjInl_8asWSae9y2_N7KM1REYXRDjlCldQ8WF5wdh8a9Hw9_sPEKYfKZMhvo4rA4uBinqwQ',
   dates: [ // fechas que se repiten cada año: mes-día
-    { label: 'Empezo la app jeje', md: '11-14', emoji: '💍' },
+    { label: 'Empezo la app', md: '11-13', emoji: '💍' },
     { label: 'Tu cumpleaños', md: '03-20', emoji: '🎂' },
     { label: 'San Valentín', md: '02-14', emoji: '🌹' }
   ]
@@ -207,12 +207,58 @@ function spawnHeart() {
   area.appendChild(el); setTimeout(() => el.remove(), 1300);
 }
 
-// --- Notas locales ---
-const notes = $('secret-notes'); notes.value = store.get('notes', ''); let saveT;
-notes.addEventListener('input', () => {
-  $('save-status').textContent = 'Guardando…'; clearTimeout(saveT);
-  saveT = setTimeout(() => { store.set('notes', notes.value); $('save-status').textContent = 'Guardado en tu dispositivo ✨'; }, 500);
+// --- Notas (guardadas solo en el teléfono; ella decide si compartir una) ---
+let noteList = store.get('noteList', null);
+if (!noteList) { const old = store.get('notes', ''); noteList = old ? [{ id: Date.now(), text: old, at: Date.now() }] : []; store.set('noteList', noteList); }
+const mk = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt) e.textContent = txt; return e; };
+function renderNotes() {
+  const box = $('notes-list'); box.innerHTML = '';
+  noteList.forEach(n => {
+    const d = mk('div', 'note'), r = mk('div', 'row');
+    const share = mk('button', '', '💌 Compartir con él'), del = mk('button', '', '🗑️ Borrar');
+    share.addEventListener('click', () => api({ type: 'message', text: '📝 Nota compartida: ' + n.text }).then(() => toast('Nota compartida 💌')).catch(() => toast('No se pudo compartir 💔')));
+    del.addEventListener('click', () => { if (confirm('¿Borrar esta nota?')) { noteList = noteList.filter(x => x.id !== n.id); store.set('noteList', noteList); renderNotes(); } });
+    r.append(share, del); d.append(mk('small', '', new Date(n.at).toLocaleString('es-MX')), mk('p', '', n.text), r); box.append(d);
+  });
+  renderStats();
+}
+$('note-add').addEventListener('click', () => {
+  const t = $('note-input').value.trim(); if (!t) return toast('Escribe algo primero ✍️');
+  noteList.unshift({ id: Date.now(), text: t, at: Date.now() }); store.set('noteList', noteList);
+  $('note-input').value = ''; renderNotes(); toast('Nota guardada ✨');
 });
+
+// --- Dashboard: estadísticas y lo que él le manda ---
+let outItems = [], toastedNew = 0;
+function renderStats() {
+  const st = store.get('streak', { n: 1 });
+  const photos = outItems.filter(i => i.hasImage).length;
+  $('stats').innerHTML = [[`🔥 ${st.n}`, 'días de racha'], [`📝 ${noteList.length}`, 'notas guardadas'], [`💌 ${outItems.length}`, 'mensajes de él'], [`📸 ${photos}`, 'fotos de él']]
+    .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
+}
+function renderFeed() {
+  const box = $('from-him'), seen = store.get('seenOut', 0); box.innerHTML = '';
+  if (!outItems.length) box.textContent = 'Aquí aparecerán los mensajes y fotos que te mande 💕';
+  outItems.forEach(it => {
+    const a = mk('article', it.at > seen ? 'fresh' : '');
+    a.append(mk('small', '', new Date(it.at).toLocaleString('es-MX')));
+    if (it.replyText) a.append(mk('blockquote', '', 'Respondiendo a: ' + it.replyText));
+    if (it.text) a.append(mk('p', '', it.text));
+    if (it.hasImage) { const i = mk('img'); i.src = '/api/outbox?img=' + encodeURIComponent(it.id); i.alt = 'Foto de él'; i.loading = 'lazy'; a.append(i); }
+    box.append(a);
+  });
+  const fresh = outItems.filter(i => i.at > seen).length, bd = $('new-badge');
+  bd.textContent = fresh + (fresh === 1 ? ' nuevo' : ' nuevos'); bd.classList.toggle('hidden', !fresh);
+  if (fresh && fresh !== toastedNew) { toastedNew = fresh; toast('Tienes un mensajito nuevo 💌'); }
+  renderStats();
+}
+async function loadOut() {
+  try { const r = await fetch('/api/outbox'); if (r.ok) { outItems = await r.json(); renderFeed(); } } catch {}
+}
+new IntersectionObserver((e, o) => { if (e[0].isIntersecting && outItems.length) setTimeout(() => {
+  store.set('seenOut', Math.max(...outItems.map(i => i.at))); $('new-badge').classList.add('hidden'); }, 2500); }, { threshold: 0.4 }).observe($('dashboard'));
+renderNotes(); loadOut(); setInterval(loadOut, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) loadOut(); });
 
 // --- Buzón (solo si abres la página con ?admin=TU_CLAVE) ---
 const ADMIN = new URLSearchParams(location.search).get('admin');

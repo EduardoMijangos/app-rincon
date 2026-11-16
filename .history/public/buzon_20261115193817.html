@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Buzón 📬</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#fff0f3;color:#4a4e69;padding:16px;max-width:660px;margin:0 auto;line-height:1.5}
+h1{color:#e63e78;margin:8px 0 14px}h2{color:#e63e78;font-size:1.1rem;margin:22px 0 10px}
+.box,article{background:#fff;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+input,textarea{width:100%;padding:12px;border:2px solid #ffafcc;border-radius:12px;font:1rem system-ui;margin-bottom:8px}
+textarea{height:90px;resize:vertical}
+button,.ghost{display:inline-block;padding:10px 16px;border:none;border-radius:12px;background:#e63e78;color:#fff;font:600 1rem system-ui;cursor:pointer}
+.ghost,.sec{background:#fff0f3;color:#e63e78}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+small{display:block;color:#777;margin-bottom:4px}
+img{width:100%;border-radius:12px;margin-top:8px}
+.thumb{max-width:160px}
+blockquote{border-left:3px solid #ffafcc;padding-left:8px;color:#777;font-size:.85rem;margin-bottom:4px}
+#status{font-size:.9rem;margin:6px 0}
+.reply{margin-top:8px}.hidden{display:none!important}
+a{color:#e63e78;font-weight:600}
+</style>
+</head>
+<body>
+<h1>📬 Buzón</h1>
+<form class="row" id="f"><input id="key" type="password" placeholder="Tu ADMIN_KEY" autocomplete="current-password" style="flex:1;margin:0"><button>Entrar</button></form>
+<p id="status"></p>
+
+<h2>Enviarle algo 💌</h2>
+<div class="box">
+  <textarea id="out-text" maxlength="1000" placeholder="Escríbele algo bonito…"></textarea>
+  <img id="out-prev" class="thumb hidden" alt="Vista previa">
+  <div class="row">
+    <label class="ghost">📷 Foto<input id="out-photo" type="file" accept="image/*" hidden></label>
+    <button id="out-send">Enviar</button>
+  </div>
+</div>
+
+<h2>Lo que ella me manda</h2>
+<div id="inbox"></div>
+
+<h2>Lo que le he enviado</h2>
+<div id="sent"></div>
+
+<script>
+const $ = id => document.getElementById(id), urls = new Map();
+const KIND = { photo: '📸 Foto', message: '✉️ Mensaje', mood: '🌈 Ánimo' };
+let photo = '', KEY = localStorage.getItem('adminKey') || '';
+$('key').value = KEY;
+const mk = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x) e.textContent = x; return e; };
+const H = () => ({ 'x-admin-key': KEY });
+const status = m => $('status').textContent = m;
+
+async function shrink(file) {
+  const b = await createImageBitmap(file), k = Math.min(1, 900 / Math.max(b.width, b.height));
+  const c = document.createElement('canvas'); c.width = Math.round(b.width * k); c.height = Math.round(b.height * k);
+  c.getContext('2d').drawImage(b, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.72);
+}
+async function post(body) {
+  const r = await fetch('/api/outbox', { method: 'POST', headers: { ...H(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (r.status === 401) throw new Error('Clave incorrecta');
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.status);
+  return r.json();
+}
+async function blobUrl(path, img, a) {
+  if (!urls.has(path)) { const r = await fetch(path, { headers: H() }); if (r.ok) urls.set(path, URL.createObjectURL(await r.blob())); }
+  if (urls.has(path)) { img.src = urls.get(path); if (a) a.href = urls.get(path); }
+}
+function card(it) {
+  const a = mk('article'); a.append(mk('small', '', new Date(it.at).toLocaleString('es-MX') + ' · ' + (KIND[it.type] || '')));
+  const t = it.type === 'mood' ? it.mood : it.type === 'photo' ? it.caption : it.text;
+  if (t) a.append(mk('p', '', t));
+  if (it.hasImage) {
+    const i = mk('img'); i.alt = 'Foto'; a.append(i);
+    const d = mk('a', '', 'Descargar'); d.download = 'foto-' + it.id + '.jpg'; a.append(d); blobUrl('/api/inbox?img=' + encodeURIComponent(it.id), i, d);
+  }
+  if (it.type !== 'mood') { // responder
+    const btn = mk('button', 'sec reply', '↩️ Responder'), f = mk('div', 'reply hidden'), inp = mk('input'), go = mk('button', '', 'Enviar respuesta');
+    inp.placeholder = 'Tu respuesta…'; inp.maxLength = 1000; f.append(inp, go); a.append(btn, f);
+    btn.onclick = () => { f.classList.toggle('hidden'); inp.focus(); };
+    go.onclick = async () => {
+      if (!inp.value.trim()) return; go.disabled = true;
+      try { const r = await post({ text: inp.value, replyTo: it.id, replyText: t || '📷 foto' }); inp.value = ''; f.classList.add('hidden'); status(r.pushed ? 'Respuesta enviada ✅ (le llegó notificación)' : 'Respuesta enviada ✅'); load(); }
+      catch (e) { status('No se pudo enviar: ' + e.message); } go.disabled = false;
+    };
+  }
+  return a;
+}
+async function load() {
+  if (!KEY) return;
+  try {
+    const r = await fetch('/api/inbox?lite=1', { headers: H() });
+    if (r.status === 401) return status('Clave incorrecta.');
+    if (!r.ok) throw 0;
+    localStorage.setItem('adminKey', KEY);
+    const items = await r.json(); $('inbox').replaceChildren(...(items.length ? items.map(card) : [mk('p', '', 'Aún no hay nada.')]));
+    const s = await (await fetch('/api/outbox')).json();
+    $('sent').replaceChildren(...(s.length ? s.map(it => {
+      const a = mk('article'); a.append(mk('small', '', new Date(it.at).toLocaleString('es-MX')));
+      if (it.replyText) a.append(mk('blockquote', '', 'En respuesta a: ' + it.replyText));
+      if (it.text) a.append(mk('p', '', it.text));
+      if (it.hasImage) { const i = mk('img', 'thumb'); i.alt = 'Foto enviada'; a.append(i); blobUrl('/api/outbox?img=' + encodeURIComponent(it.id), i); }
+      return a; }) : [mk('p', '', 'Todavía no le has enviado nada.')]));
+  } catch { status('No se pudo cargar. Revisa tu conexión.'); }
+}
+$('f').addEventListener('submit', e => { e.preventDefault(); KEY = $('key').value.trim(); load(); });
+$('out-photo').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { photo = await shrink(f); $('out-prev').src = photo; $('out-prev').classList.remove('hidden'); } catch { status('No pude leer esa foto.'); }
+});
+$('out-send').addEventListener('click', async e => {
+  const text = $('out-text').value.trim(); if (!KEY) return status('Escribe tu clave primero.'); if (!text && !photo) return status('Escribe algo o elige una foto.');
+  e.target.disabled = true;
+  try { const r = await post({ text, image: photo || undefined }); $('out-text').value = ''; photo = ''; $('out-photo').value = ''; $('out-prev').classList.add('hidden');
+    status(r.pushed ? 'Enviado ✅ (le llegó notificación)' : 'Enviado ✅ (lo verá al abrir su rincón; aún no tiene notificaciones activas)'); load(); }
+  catch (err) { status('No se pudo enviar: ' + err.message); } e.target.disabled = false;
+});
+setInterval(() => { if (!document.hidden) load(); }, 30000); load();
+</script>
+</body>
+</html>
