@@ -23,9 +23,10 @@
 </div>
 
 <header>
+  <button id="theme-btn" class="theme-btn" aria-label="Cambiar entre tema de día y de noche">🌙</button>
   <h1>Para la chica más especial ✨</h1>
   <p class="subtitle" id="greeting"></p>
-  <div class="counter"><p>Llevamos juntos</p><div class="counter-grid" id="counter"></div></div>
+  <div class="counter"><p>Este rincón nació hace</p><div class="counter-grid" id="counter"></div></div>
   <p class="streak" id="streak"></p>
   <button id="enable-notif" class="btn-notif">🔔 Activar mensajitos</button>
 </header>
@@ -34,6 +35,8 @@
   <section class="card" id="dashboard">
     <h2>📊 Mi dashboard <span id="new-badge" class="badge hidden"></span></h2>
     <div class="stats" id="stats"></div>
+    <h3>🏅 Mis logros</h3>
+    <div id="badges" class="badges"></div>
     <h3>💌 Lo que te he mandado</h3>
     <div id="from-him" class="feed" aria-live="polite"></div>
   </section>
@@ -57,6 +60,22 @@
   <section class="card">
     <h2>📅 Fechas que importan</h2>
     <div id="dates" class="dates"></div>
+  </section>
+
+  <section class="card">
+    <h2>💭 Pregunta del día</h2>
+    <p id="q-text" class="quote-box"></p>
+    <textarea id="q-answer" maxlength="500" placeholder="Tu respuesta…"></textarea>
+    <button id="q-send" class="btn-romantic">Enviar respuesta</button>
+  </section>
+
+  <section class="card">
+    <h2>⏳ Cápsula del tiempo</h2>
+    <p>Escríbete algo y ábrelo cuando llegue la fecha que elijas. Queda en tu teléfono.</p>
+    <textarea id="cap-text" maxlength="500" placeholder="Para mi yo del futuro…"></textarea>
+    <input id="cap-date" type="date" class="field" aria-label="Fecha de apertura">
+    <button id="cap-add" class="btn-romantic">Guardar cápsula</button>
+    <div id="caps" class="notes"></div>
   </section>
 
   <section class="card">

@@ -2,9 +2,9 @@
 const CONFIG = {
   name: 'preciosa',
   startDate: '2026-11-13T00:00:00',
-  vapidKey: 'BGovB4Y_bkqmOhy8AjInl_8asWSae9y2_N7KM1REYXRDjlCldQ8WF5wdh8a9Hw9_sPEKYfKZMhvo4rA4uBinqwQ',
+  vapidKey: 'BJcFhpdYeBJw4OejB9y0UZkmRwDJf10Fc1bQIuisuD3d28b69WoFrfVbqae1E9-_DrCcX6xAcHk2C2_OiB5voHc',
   dates: [ // fechas que se repiten cada año: mes-día
-    { label: 'Empezo la app', md: '11-13', emoji: '💍' },
+    { label: 'Cumple de nuestro rincón', md: '11-13', emoji: '🎉' },
     { label: 'Tu cumpleaños', md: '03-20', emoji: '🎂' },
     { label: 'San Valentín', md: '02-14', emoji: '🌹' }
   ]
@@ -154,7 +154,7 @@ $('photo-send').addEventListener('click', async e => {
     const img = document.createElement('img'); img.src = photoData; img.alt = 'Foto enviada'; $('my-photos').prepend(img);
     ['photo-preview', 'photo-caption', 'photo-send'].forEach(i => $(i).classList.add('hidden'));
     $('photo-caption').value = ''; $('photo-input').value = ''; photoData = '';
-    toast('¡Foto enviada! Me encantó 💕'); burst(e.clientX, e.clientY, '📸', 8);
+    store.set('sentPhoto', store.get('sentPhoto', 0) + 1); toast('¡Foto enviada! Me encantó 💕'); burst(e.clientX, e.clientY, '📸', 8);
   } catch { toast('No se pudo enviar la foto. Inténtalo otra vez 💔'); }
   btn.disabled = false; btn.textContent = 'Enviar foto 💌';
 });
@@ -235,6 +235,7 @@ function renderStats() {
   const photos = outItems.filter(i => i.hasImage).length;
   $('stats').innerHTML = [[`🔥 ${st.n}`, 'días de racha'], [`📝 ${noteList.length}`, 'notas guardadas'], [`💌 ${outItems.length}`, 'mensajes de él'], [`📸 ${photos}`, 'fotos de él']]
     .map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
+  renderBadges();
 }
 function renderFeed() {
   const box = $('from-him'), seen = store.get('seenOut', 0); box.innerHTML = '';
@@ -283,6 +284,75 @@ if (ADMIN) {
   $('admin-refresh').addEventListener('click', load); load();
 }
 
+// --- Tema día / noche ---
+const themeBtn = $('theme-btn'), hnow = new Date().getHours();
+function applyTheme(t) {
+  document.body.dataset.theme = t; themeBtn.textContent = t === 'night' ? '☀️' : '🌙';
+  document.querySelector('meta[name=theme-color]').content = t === 'night' ? '#2b2140' : '#ff5d8f';
+}
+applyTheme(store.get('theme', hnow >= 20 || hnow < 6 ? 'night' : 'day'));
+themeBtn.addEventListener('click', () => { const t = document.body.dataset.theme === 'night' ? 'day' : 'night'; store.set('theme', t); applyTheme(t); });
+
+// --- Pregunta del día (la respuesta me llega al buzón) ---
+const questions = [
+  "¿Qué fue lo mejor que te pasó esta semana?", "Si pudiéramos viajar mañana, ¿a dónde iríamos?",
+  "¿Qué canción te hace pensar en mí?", "¿Qué comida te levanta el ánimo siempre?",
+  "¿Cuál es un recuerdo nuestro que te saca una sonrisa?", "¿Qué te gustaría que hiciéramos juntos este mes?",
+  "¿Qué es algo pequeño que te hace feliz?", "¿Qué sueño tuyo todavía no me has contado?",
+  "¿Cómo sería tu día perfecto?", "¿Qué te hizo reír hoy?",
+  "¿Qué cosa nueva te gustaría aprender?", "¿Qué te gustaría que supiera de ti que no sé?",
+  "¿Cuál es tu lugar favorito para estar tranquila?", "¿Qué te gustaría pedirme hoy?"
+];
+const qToday = questions[dayIdx % questions.length];
+$('q-text').textContent = qToday;
+function syncQ() {
+  const done = store.get('qDone', '') === new Date().toDateString();
+  $('q-answer').classList.toggle('hidden', done); $('q-send').disabled = done;
+  $('q-send').textContent = done ? 'Respondida hoy ✅' : 'Enviar respuesta';
+}
+$('q-send').addEventListener('click', async e => {
+  const t = $('q-answer').value.trim(); if (!t) return toast('Escribe tu respuesta primero ✍️');
+  try {
+    await api({ type: 'message', text: `💭 ${qToday}\n${t}` });
+    store.set('qDone', new Date().toDateString()); store.set('qCount', store.get('qCount', 0) + 1);
+    $('q-answer').value = ''; syncQ(); renderStats(); toast('Respuesta enviada 💌'); burst(e.clientX, e.clientY, '💭', 8);
+  } catch { toast('No se pudo enviar. Inténtalo otra vez 💔'); }
+});
+syncQ();
+
+// --- Cápsula del tiempo (queda en el teléfono hasta que llega la fecha) ---
+let capsules = store.get('capsules', []);
+const ymd = d => d.toLocaleDateString('en-CA');
+$('cap-date').min = ymd(new Date(Date.now() + 864e5));
+function renderCaps() {
+  const box = $('caps'); box.innerHTML = '';
+  capsules.sort((a, b) => a.open.localeCompare(b.open)).forEach(c => {
+    const locked = c.open > ymd(new Date()), n = mk('div', 'note'), r = mk('div', 'row'), del = mk('button', '', '🗑️ Borrar');
+    const when = new Date(c.open + 'T00:00:00').toLocaleDateString('es-MX', { dateStyle: 'long' });
+    n.append(mk('small', '', locked ? '🔒 Se abre el ' + when : '🔓 Se abrió el ' + when), mk('p', '', locked ? 'Todavía no es momento… 💌' : c.text));
+    del.addEventListener('click', () => { if (confirm('¿Borrar esta cápsula?')) { capsules = capsules.filter(x => x.id !== c.id); store.set('capsules', capsules); renderCaps(); } });
+    r.append(del); n.append(r); box.append(n);
+  });
+}
+$('cap-add').addEventListener('click', () => {
+  const t = $('cap-text').value.trim(), d = $('cap-date').value;
+  if (!t || !d) return toast('Escribe tu mensaje y elige una fecha ✍️');
+  if (d <= ymd(new Date())) return toast('Elige una fecha futura ⏳');
+  capsules.push({ id: Date.now(), text: t, open: d }); store.set('capsules', capsules);
+  $('cap-text').value = ''; $('cap-date').value = ''; renderCaps(); toast('Cápsula guardada. ¡Nos vemos en el futuro! ⏳');
+});
+renderCaps();
+if (capsules.some(c => c.open === ymd(new Date()))) setTimeout(() => toast('⏳ ¡Hoy se abre una de tus cápsulas del tiempo!'), 2500);
+
+// --- Logros ---
+function renderBadges() {
+  const st = store.get('streak', { n: 1 });
+  const list = [['🌱', 'Llegaste al rincón', true], ['🔥', '7 días de racha', st.n >= 7], ['📸', 'Primera foto enviada', store.get('sentPhoto', 0) > 0],
+    ['💭', 'Respondiste una pregunta', store.get('qCount', 0) > 0], ['🎮', 'Récord de 15 puntos', best >= 15], ['📝', '5 notas guardadas', noteList.length >= 5],
+    ['⏳', 'Creaste una cápsula', capsules.length > 0]];
+  $('badges').innerHTML = list.map(([e, l, ok]) => `<span class="${ok ? '' : 'off'}" title="${ok ? 'Logro desbloqueado' : 'Aún bloqueado'}">${e} ${l}</span>`).join('');
+}
+
 // --- Service Worker y notificaciones push ---
 const notifBtn = $('enable-notif');
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(console.error);
@@ -290,7 +360,7 @@ if (!('PushManager' in window) || !('Notification' in window)) {
   notifBtn.textContent = '📲 Instálame en tu inicio para los mensajitos';
   notifBtn.addEventListener('click', () => toast('En iPhone: Compartir → Añadir a pantalla de inicio, y ábreme desde ahí 💕'));
 } else {
-  if (Notification.permission === 'granted') { notifBtn.textContent = '✅ Mensajitos activados'; notifBtn.disabled = true; }
+  if (Notification.permission === 'granted') { notifBtn.textContent = '✅ Mensajitos activados'; notifBtn.disabled = true; resync(); }
   notifBtn.addEventListener('click', async () => {
     try {
       if (await Notification.requestPermission() !== 'granted') return toast('Permite las notificaciones para recibir mensajitos lindos ❤️');
@@ -306,4 +376,18 @@ if (!('PushManager' in window) || !('Notification' in window)) {
 function urlB64(s) {
   const b = (s + '='.repeat((4 - s.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
   return Uint8Array.from(atob(b), c => c.charCodeAt(0));
+}
+
+// Si cambió la clave VAPID, renueva la suscripción sin pedir permiso otra vez y la guarda en el servidor
+async function resync() {
+  try {
+    const reg = await navigator.serviceWorker.ready, want = urlB64(CONFIG.vapidKey);
+    let sub = await reg.pushManager.getSubscription();
+    const have = sub && sub.options && sub.options.applicationServerKey ? new Uint8Array(sub.options.applicationServerKey) : null;
+    if (!have || have.length !== want.length || !have.every((v, i) => v === want[i])) {
+      if (sub) await sub.unsubscribe();
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: want });
+    }
+    await fetch('/api/subscribe', { method: 'POST', body: JSON.stringify(sub), headers: { 'Content-Type': 'application/json' } });
+  } catch (e) { console.error('resync', e); }
 }

@@ -76,3 +76,16 @@ h3{color:var(--pink-dark);margin:18px 0 8px;font-size:1.05rem}
 .note p{white-space:pre-wrap}
 .note .row{justify-content:flex-start;margin-top:4px}
 .note button{background:#fff0f3;color:var(--pink-dark);border-radius:50px;padding:6px 12px;font-size:.85rem}
+
+header{position:relative}
+.theme-btn{position:absolute;top:0;right:0;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.3);font-size:1.3rem}
+.badges{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.badges span{background:#fff0f3;border-radius:50px;padding:6px 12px;font-size:.85rem}
+.badges .off{opacity:.4;filter:grayscale(1)}
+body[data-theme=night]{--card:rgba(43,33,64,.92);--text:#f1e9ff;--pink-dark:#ff8fb8;background:linear-gradient(120deg,#2b2140,#5a3a7a) fixed}
+body[data-theme=night] :is(.quote-box,.stats div,.date-item,.letters button,.btn-ghost,.moods button,#game-area,.note,.feed article,.favs p,.badges span,.field,textarea){background:#3a2f55;color:var(--text);border-color:#6b4f8f}
+body[data-theme=night] .modal-content{background:#2b2140;color:var(--text)}
+body[data-theme=night] .toast{background:#3a2f55}
+body[data-theme=night] .btn-romantic{background:#d6336c;color:#fff}
+body[data-theme=night] :is(.feed small,.note small,.status-text,.feed blockquote){color:#b9a8d6}
+body[data-theme=night] .note button{background:#2b2140}
