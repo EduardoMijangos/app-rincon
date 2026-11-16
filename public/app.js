@@ -230,6 +230,7 @@ $('note-add').addEventListener('click', () => {
 
 // --- Dashboard: estadísticas y lo que él le manda ---
 let outItems = [], toastedNew = 0;
+let capsules = store.get('capsules', []);
 function renderStats() {
   const st = store.get('streak', { n: 1 });
   const photos = outItems.filter(i => i.hasImage).length;
@@ -321,7 +322,6 @@ $('q-send').addEventListener('click', async e => {
 syncQ();
 
 // --- Cápsula del tiempo (queda en el teléfono hasta que llega la fecha) ---
-let capsules = store.get('capsules', []);
 const ymd = d => d.toLocaleDateString('en-CA');
 $('cap-date').min = ymd(new Date(Date.now() + 864e5));
 function renderCaps() {
