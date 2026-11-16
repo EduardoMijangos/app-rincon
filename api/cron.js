@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     if (hour >= 23 || hour < 8) return res.status(200).json({ status: 'Hora de descanso 😴' });
 
     const pubKey = (process.env.VAPID_PUBLIC_KEY || '').trim(), privKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
-    webpush.setVapidDetails('eduardo.mijangos.hdz@gmail.com', pubKey, privKey); // ← pon aquí tu correo real
+webpush.setVapidDetails('mailto:eduardo.mijangos.hdz@gmail.com', pubKey, privKey);
     const raw = await redis.get('girlfriend_sub');
     if (!raw) return res.status(200).json({ status: 'Aún no se suscribe' });
     const sub = typeof raw === 'string' ? JSON.parse(raw) : raw;
