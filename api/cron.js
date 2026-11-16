@@ -23,7 +23,8 @@ export default async function handler(req, res) {
     const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Mexico_City' }).format(new Date())) % 24;
     if (hour >= 23 || hour < 8) return res.status(200).json({ status: 'Hora de descanso 😴' });
 
-    webpush.setVapidDetails('mailto:tu-correo@ejemplo.com', process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+    const pubKey = (process.env.VAPID_PUBLIC_KEY || '').trim(), privKey = (process.env.VAPID_PRIVATE_KEY || '').trim();
+    webpush.setVapidDetails('mailto:tu-correo@ejemplo.com', pubKey, privKey); // ← pon aquí tu correo real
     const raw = await redis.get('girlfriend_sub');
     if (!raw) return res.status(200).json({ status: 'Aún no se suscribe' });
     const sub = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -33,7 +34,12 @@ export default async function handler(req, res) {
       res.status(200).json({ sent: body });
     } catch (err) {
       if (err.statusCode === 404 || err.statusCode === 410) await redis.del('girlfriend_sub');
-      res.status(200).json({ error: err.statusCode || 'fallo' });
+      res.status(200).json({
+        error: err.statusCode || 'fallo',
+        detalle: String(err.body || err.message || '').slice(0, 300),
+        clavePublicaEnVercel: pubKey.slice(0, 12) + '…(' + pubKey.length + ')', // debe empezar con BJcFhpdYeBJw y medir 87
+        servicio: new URL(sub.endpoint).host
+      });
     }
   } catch (e) {
     console.error('send error:', e);
